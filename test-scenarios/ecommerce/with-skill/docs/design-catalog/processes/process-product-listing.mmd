@@ -1,0 +1,93 @@
+flowchart LR
+    %% EventStorming Process Level - Product Listing & Management
+    classDef event fill:#ff9800,stroke:#e65100,color:#000
+    classDef command fill:#2196f3,stroke:#0d47a1,color:#fff
+    classDef actor fill:#ffeb3b,stroke:#f57f17,color:#000
+    classDef policy fill:#ba68c8,stroke:#6a1b9a,color:#fff
+    classDef aggregate fill:#4caf50,stroke:#1b5e20,color:#fff
+    classDef hotspot fill:#f44336,stroke:#b71c1c,color:#fff
+
+    %% Actors
+    Seller[Artisan/Seller]:::actor
+    Customer[Customer]:::actor
+
+    %% Commands
+    CmdCreateProduct[Create Product]:::command
+    CmdUploadImages[Upload Images]:::command
+    CmdPublishProduct[Publish Product]:::command
+    CmdUpdateInventory[Update Inventory]:::command
+    CmdUpdatePrice[Update Price]:::command
+    CmdBrowse[Browse Products]:::command
+
+    %% Events
+    EvtProductDrafted[Product Drafted]:::event
+    EvtImagesUploaded[Images Uploaded]:::event
+    EvtProductValidated[Product Validated]:::event
+    EvtProductPublished[Product Published]:::event
+    EvtInventoryUpdated[Inventory Updated]:::event
+    EvtPriceUpdated[Price Updated]:::event
+    EvtProductViewed[Product Viewed]:::event
+    EvtProductSearched[Products Searched]:::event
+    EvtOutOfStock[Product Out of Stock]:::event
+
+    %% Aggregates
+    AggProduct[Product]:::aggregate
+    AggInventory[Inventory]:::aggregate
+
+    %% Policies
+    PolicyValidProduct{Product Info<br/>Complete?}:::policy
+    PolicyInventoryCheck{Inventory<br/>Available?}:::policy
+
+    %% Hotspots
+    Hot1[? Product categorization taxonomy]:::hotspot
+    Hot2[? Image quality requirements]:::hotspot
+    Hot3[? Inventory reservation timing]:::hotspot
+    Hot4[? Search/filter capabilities]:::hotspot
+
+    %% Flow - Create and publish product
+    Seller --> CmdCreateProduct
+    CmdCreateProduct --> EvtProductDrafted
+    EvtProductDrafted --> AggProduct
+    EvtProductDrafted -.data.- Note1[title, description,<br/>category, price,<br/>status=DRAFT]
+    EvtProductDrafted -.question.- Hot1
+
+    Seller --> CmdUploadImages
+    CmdUploadImages --> EvtImagesUploaded
+    EvtImagesUploaded --> AggProduct
+    EvtImagesUploaded -.data.- Note2[image_urls[],<br/>primary_image]
+    EvtImagesUploaded -.question.- Hot2
+
+    Seller --> CmdPublishProduct
+    CmdPublishProduct --> PolicyValidProduct
+    PolicyValidProduct -->|complete| EvtProductValidated
+    PolicyValidProduct -->|incomplete| EvtProductDrafted
+
+    EvtProductValidated --> EvtProductPublished
+    EvtProductPublished --> AggProduct
+    EvtProductPublished -.data.- Note3[status=PUBLISHED,<br/>published_at]
+
+    %% Flow - Inventory management
+    Seller --> CmdUpdateInventory
+    CmdUpdateInventory --> EvtInventoryUpdated
+    EvtInventoryUpdated --> AggInventory
+    EvtInventoryUpdated -.data.- Note4[quantity_available,<br/>updated_at]
+
+    EvtInventoryUpdated --> PolicyInventoryCheck
+    PolicyInventoryCheck -->|quantity = 0| EvtOutOfStock
+    EvtOutOfStock --> AggProduct
+    EvtOutOfStock -.data.- Note5[status=OUT_OF_STOCK]
+    EvtInventoryUpdated -.question.- Hot3
+
+    %% Flow - Price updates
+    Seller --> CmdUpdatePrice
+    CmdUpdatePrice --> EvtPriceUpdated
+    EvtPriceUpdated --> AggProduct
+    EvtPriceUpdated -.data.- Note6[price, price_updated_at]
+
+    %% Flow - Customer browsing
+    Customer --> CmdBrowse
+    CmdBrowse --> EvtProductSearched
+    EvtProductSearched -.question.- Hot4
+
+    EvtProductSearched --> EvtProductViewed
+    EvtProductViewed --> AggProduct

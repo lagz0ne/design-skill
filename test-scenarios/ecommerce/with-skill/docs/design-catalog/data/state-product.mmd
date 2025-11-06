@@ -1,0 +1,40 @@
+stateDiagram-v2
+    [*] --> DRAFT: Product Created
+
+    DRAFT --> DRAFT: Edit Details / Upload Images
+    DRAFT --> PUBLISHED: Publish (validation passed)
+    DRAFT --> ARCHIVED: Delete Draft
+
+    PUBLISHED --> OUT_OF_STOCK: Inventory = 0
+    PUBLISHED --> PUBLISHED: Update Price / Images
+    PUBLISHED --> ARCHIVED: Seller Archives
+
+    OUT_OF_STOCK --> PUBLISHED: Inventory Replenished
+    OUT_OF_STOCK --> ARCHIVED: Seller Archives
+
+    ARCHIVED --> [*]
+
+    note right of DRAFT
+        Data: title, description, price, images
+        Visibility: Private to seller
+        Validation: Required fields checked
+    end note
+
+    note right of PUBLISHED
+        Data: published_at timestamp
+        Visibility: Public to all customers
+        Searchable: Yes
+        Purchasable: Yes (if inventory > 0)
+    end note
+
+    note right of OUT_OF_STOCK
+        Data: inventory.quantity_available = 0
+        Visibility: Public but not purchasable
+        Display: "Out of Stock" label
+    end note
+
+    note right of ARCHIVED
+        Data: archived_at timestamp
+        Visibility: Hidden from public
+        Final state: Can be restored by creating new
+    end note

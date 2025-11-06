@@ -1,0 +1,52 @@
+sequenceDiagram
+    actor Customer
+    participant Frontend
+    participant SearchService
+    participant ProductService
+    participant InventoryService
+    participant AnalyticsService
+
+    Customer->>Frontend: Visit Homepage
+    Frontend->>SearchService: Get Featured Products
+    SearchService->>ProductService: Query (status=PUBLISHED, featured=true)
+    ProductService->>InventoryService: Check Availability
+    InventoryService-->>ProductService: Return Inventory Status
+    ProductService-->>SearchService: Return Products + Stock Info
+    SearchService-->>Frontend: Return Results
+    Frontend->>Customer: Display Featured Products
+
+    Customer->>Frontend: Enter Search Query
+    Frontend->>SearchService: Search "handmade jewelry"
+
+    SearchService->>SearchService: Parse Query + Apply Filters
+    SearchService->>ProductService: Query Products (category, keywords)
+    ProductService->>InventoryService: Batch Check Inventory
+    InventoryService-->>ProductService: Return Availability for All
+
+    ProductService-->>SearchService: Return Matching Products
+    SearchService-->>Frontend: Return Search Results
+    Frontend->>Customer: Display Product Grid
+
+    Frontend->>AnalyticsService: Track Search Event
+    AnalyticsService->>AnalyticsService: Log Search Query
+
+    Customer->>Frontend: Click Product
+    Frontend->>ProductService: Get Product Details (product_id)
+    ProductService->>InventoryService: Get Current Stock
+    InventoryService-->>ProductService: quantity_available
+
+    ProductService-->>Frontend: Product Details + Inventory
+    Frontend->>Customer: Show Product Page
+
+    Frontend->>AnalyticsService: Track Product View
+    AnalyticsService->>AnalyticsService: Log View Event
+
+    alt Product Available
+        Customer->>Frontend: Add to Cart
+        Frontend->>ProductService: Reserve Inventory?
+        Note over ProductService,InventoryService: Hotspot: Inventory reservation timing
+        Frontend->>Customer: Added to Cart
+
+    else Product Out of Stock
+        Frontend->>Customer: Show "Out of Stock" + Notify Option
+    end

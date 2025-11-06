@@ -1,0 +1,275 @@
+# E-Commerce Platform System Diagram
+
+## High-Level System Architecture
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              CLIENT LAYER                                    │
+├──────────────────────────────────┬──────────────────────────────────────────┤
+│   Customer Web App (React)       │   Seller Dashboard (React)               │
+│   - Browse products              │   - Manage inventory                      │
+│   - Shopping cart                │   - View orders                           │
+│   - Checkout                     │   - Sales analytics                       │
+│   - Order tracking               │   - Product management                    │
+└──────────────────────────────────┴──────────────────────────────────────────┘
+                                    │
+                                    │ HTTPS/REST API
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                     API GATEWAY / LOAD BALANCER                              │
+│                     - Route requests                                         │
+│                     - Rate limiting                                          │
+│                     - SSL termination                                        │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+        ┌───────────────────────────┼───────────────────────────┐
+        │                           │                           │
+        ▼                           ▼                           ▼
+┌──────────────────┐    ┌──────────────────┐    ┌──────────────────┐
+│  USER SERVICE    │    │ PRODUCT SERVICE  │    │  ORDER SERVICE   │
+│                  │    │                  │    │                  │
+│ - Registration   │    │ - CRUD Products  │    │ - Create orders  │
+│ - Login/Auth     │    │ - Search         │    │ - Order status   │
+│ - Profile mgmt   │    │ - Categories     │    │ - Fulfillment    │
+│ - JWT tokens     │    │ - Reviews        │    │ - History        │
+└──────────────────┘    └──────────────────┘    └──────────────────┘
+        │                           │                           │
+        └───────────────────────────┼───────────────────────────┘
+                                    │
+        ┌───────────────────────────┼───────────────────────────┐
+        │                           │                           │
+        ▼                           ▼                           ▼
+┌──────────────────┐    ┌──────────────────┐    ┌──────────────────┐
+│  CART SERVICE    │    │ PAYMENT SERVICE  │    │ NOTIFICATION SVC │
+│                  │    │                  │    │                  │
+│ - Add/remove     │    │ - Process pay    │    │ - Emails         │
+│ - Calculate      │    │ - Stripe/PayPal  │    │ - SMS            │
+│ - Persist cart   │    │ - Refunds        │    │ - Push notif     │
+└──────────────────┘    └──────────────────┘    └──────────────────┘
+        │                           │                           │
+        └───────────────────────────┼───────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              DATA LAYER                                      │
+├──────────────────────────────────┬──────────────────────────────────────────┤
+│   PostgreSQL (Primary DB)        │   Redis (Cache & Sessions)               │
+│   - Users                        │   - Session data                          │
+│   - Products                     │   - Cart data                             │
+│   - Orders                       │   - Product cache                         │
+│   - Payments                     │   - Rate limiting                         │
+├──────────────────────────────────┴──────────────────────────────────────────┤
+│                     S3 Object Storage (Images)                               │
+│                     - Product images                                         │
+│                     - Seller logos                                           │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         EXTERNAL SERVICES                                    │
+├──────────────────────────────────┬──────────────────────────────────────────┤
+│   Payment Gateways               │   Communication Services                  │
+│   - Stripe                       │   - SendGrid (Email)                      │
+│   - PayPal                       │   - Twilio (SMS)                          │
+├──────────────────────────────────┴──────────────────────────────────────────┤
+│                     Shipping Providers                                       │
+│                     - FedEx API                                              │
+│                     - UPS API                                                │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+
+## Data Flow: Customer Places Order
+
+┌────────────┐
+│  Customer  │
+└──────┬─────┘
+       │ 1. Add products to cart
+       ▼
+┌─────────────────┐
+│  Cart Service   │ ←──── Redis (Cart persistence)
+└────────┬────────┘
+         │ 2. Proceed to checkout
+         ▼
+┌─────────────────┐
+│ Order Service   │
+└────────┬────────┘
+         │ 3. Create pending order
+         ▼
+┌─────────────────┐
+│ Payment Service │
+└────────┬────────┘
+         │ 4. Process payment
+         ▼
+┌─────────────────┐
+│  Stripe API     │
+└────────┬────────┘
+         │ 5. Payment confirmed
+         ▼
+┌─────────────────┐
+│ Order Service   │ ───► PostgreSQL (Update order status)
+└────────┬────────┘      Product Service (Reduce inventory)
+         │
+         │ 6. Order confirmed
+         ▼
+┌──────────────────┐
+│ Notification SVC │ ───► SendGrid (Send confirmation email)
+└──────────────────┘
+
+
+## Data Flow: Seller Fulfills Order
+
+┌────────────┐
+│   Seller   │
+└──────┬─────┘
+       │ 1. View pending orders
+       ▼
+┌─────────────────┐
+│ Order Service   │ ←──── PostgreSQL (Fetch orders by seller)
+└────────┬────────┘
+         │ 2. Update order status to "Processing"
+         ▼
+┌─────────────────┐
+│ Order Service   │ ───► PostgreSQL (Update status)
+└────────┬────────┘
+         │ 3. Ship order & add tracking
+         ▼
+┌─────────────────┐
+│ Order Service   │ ───► PostgreSQL (Add tracking info)
+└────────┬────────┘
+         │ 4. Status changed to "Shipped"
+         ▼
+┌──────────────────┐
+│ Notification SVC │ ───► SendGrid (Notify customer)
+└──────────────────┘
+
+
+## Database Entity Relationships
+
+           ┌─────────────┐
+           │    User     │
+           └──────┬──────┘
+                  │
+        ┌─────────┴─────────┐
+        │                   │
+        ▼                   ▼
+┌───────────────┐   ┌──────────────┐
+│ SellerProfile │   │   Address    │
+└───────┬───────┘   └──────────────┘
+        │
+        │ has many
+        ▼
+┌───────────────┐
+│   Product     │
+└───────┬───────┘
+        │
+        │ belongs to
+        ▼
+┌───────────────┐
+│   Category    │
+└───────────────┘
+
+    User ──────► Cart ──────► CartItem ──────► Product
+     │
+     │ places
+     ▼
+    Order ──────► OrderItem ──────► Product
+     │                │
+     │                └────► Seller
+     │
+     ├────► Payment
+     │
+     └────► Tracking
+
+    Product ──────► Review ──────► User
+
+
+## Security Architecture
+
+┌─────────────┐
+│   Client    │
+└──────┬──────┘
+       │ HTTPS (TLS 1.3)
+       ▼
+┌─────────────┐
+│     WAF     │ (Web Application Firewall)
+└──────┬──────┘
+       │ Rate Limiting
+       ▼
+┌─────────────┐
+│  API Gateway│
+└──────┬──────┘
+       │ JWT Validation
+       ▼
+┌─────────────┐
+│  Services   │
+└──────┬──────┘
+       │ Encrypted connections
+       ▼
+┌─────────────┐
+│  Database   │ (Encryption at rest)
+└─────────────┘
+
+
+## Deployment Architecture (Kubernetes)
+
+┌─────────────────────────────────────────────────────────┐
+│                    Kubernetes Cluster                    │
+│                                                          │
+│  ┌────────────────────────────────────────────────┐    │
+│  │              Ingress Controller                 │    │
+│  └───────────────────┬────────────────────────────┘    │
+│                      │                                   │
+│  ┌───────────────────┴────────────────────────────┐    │
+│  │                  Services                       │    │
+│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐     │    │
+│  │  │  User    │  │ Product  │  │  Order   │     │    │
+│  │  │ Service  │  │ Service  │  │ Service  │     │    │
+│  │  │ (3 pods) │  │ (3 pods) │  │ (3 pods) │     │    │
+│  │  └──────────┘  └──────────┘  └──────────┘     │    │
+│  └─────────────────────────────────────────────────┘   │
+│                                                          │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │            Persistent Storage                    │   │
+│  │  - PostgreSQL (RDS)                             │   │
+│  │  - Redis (ElastiCache)                          │   │
+│  └─────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────┘
+
+
+## Monitoring & Observability Stack
+
+┌────────────┐
+│ Services   │ ──► Metrics ───► Prometheus ───► Grafana
+└──────┬─────┘                                    (Dashboards)
+       │
+       ├───► Logs ──────► Logstash ───► Elasticsearch ───► Kibana
+       │
+       └───► Traces ────► Jaeger/OpenTelemetry
+       │
+       └───► Errors ────► Sentry
+
+
+## Caching Strategy
+
+┌────────────┐
+│   Client   │
+└──────┬─────┘
+       │
+       ▼
+┌─────────────┐
+│  CDN Cache  │ ◄──── Static assets, images
+└──────┬──────┘       (CloudFront)
+       │
+       ▼
+┌─────────────┐
+│ API Gateway │
+└──────┬──────┘
+       │
+       ▼
+┌─────────────┐
+│ Redis Cache │ ◄──── Product catalog
+└──────┬──────┘       User sessions
+       │              Cart data
+       ▼              (5-minute TTL for products)
+┌─────────────┐
+│  Database   │
+└─────────────┘

@@ -1,0 +1,61 @@
+stateDiagram-v2
+    [*] --> PENDING: Order Placed
+
+    PENDING --> PAID: Payment Authorized & Escrowed
+    PENDING --> CANCELLED: Payment Failed
+
+    PAID --> SHIPPED: Seller Ships Order
+    PAID --> CANCELLED: Seller Cancels
+
+    SHIPPED --> DELIVERED: Carrier Reports Delivery
+    SHIPPED --> CANCELLED: Delivery Failed
+
+    DELIVERED --> COMPLETED: Delivery Confirmed (auto or manual)
+    DELIVERED --> DISPUTED: Customer Raises Dispute
+
+    DISPUTED --> COMPLETED: Dispute Resolved - Favor Seller
+    DISPUTED --> CANCELLED: Dispute Resolved - Favor Customer (Refund)
+
+    COMPLETED --> [*]: Funds Released to Seller
+    CANCELLED --> [*]: Funds Refunded to Customer
+
+    note right of PENDING
+        Data: order_id, total_amount
+        Escrow: Not yet created
+    end note
+
+    note right of PAID
+        Data: payment_id, escrow_id
+        Escrow: Funds held
+        Trigger: Seller notification sent
+    end note
+
+    note right of SHIPPED
+        Data: tracking_number, carrier
+        Escrow: Still held
+        Trigger: Customer notification sent
+    end note
+
+    note right of DELIVERED
+        Data: delivered_at timestamp
+        Escrow: Still held
+        Auto-confirm: Timer starts
+    end note
+
+    note right of COMPLETED
+        Data: confirmed_at timestamp
+        Escrow: Released to seller
+        Final state
+    end note
+
+    note right of DISPUTED
+        Data: dispute_reason, dispute_date
+        Escrow: Frozen until resolution
+        Manual: Admin intervention
+    end note
+
+    note right of CANCELLED
+        Data: cancelled_at, cancel_reason
+        Escrow: Refunded to customer
+        Final state
+    end note

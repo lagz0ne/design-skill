@@ -1,0 +1,56 @@
+sequenceDiagram
+    actor Customer
+    participant Frontend
+    participant OrderService
+    participant PaymentService
+    participant PaymentGateway
+    participant EscrowService
+    participant EmailService
+    actor Seller
+
+    Customer->>Frontend: Click Checkout
+    Frontend->>OrderService: Validate Cart
+
+    alt Cart Valid
+        OrderService-->>Frontend: Cart OK
+        Frontend->>Customer: Request Shipping Info
+        Customer->>Frontend: Provide Address
+
+        Frontend->>Customer: Request Payment Info
+        Customer->>Frontend: Provide Card Details
+
+        Frontend->>PaymentService: Authorize Payment
+        PaymentService->>PaymentGateway: Process Authorization
+
+        alt Payment Authorized
+            PaymentGateway-->>PaymentService: Authorization Success
+            PaymentService->>OrderService: Create Order
+            OrderService->>OrderService: Generate Order ID
+
+            OrderService->>EscrowService: Hold Funds
+            EscrowService->>PaymentGateway: Capture Payment to Escrow
+            PaymentGateway-->>EscrowService: Funds Captured
+
+            EscrowService-->>OrderService: Escrow Created
+            OrderService-->>Frontend: Order Placed Successfully
+
+            par Notifications
+                OrderService->>EmailService: Send Customer Confirmation
+                EmailService->>Customer: Email: Order Confirmed
+            and
+                OrderService->>EmailService: Send Seller Notification
+                EmailService->>Seller: Email: New Order
+            end
+
+            Frontend->>Customer: Show Order Confirmation
+
+        else Payment Declined
+            PaymentGateway-->>PaymentService: Authorization Failed
+            PaymentService-->>Frontend: Payment Error
+            Frontend->>Customer: Show Error + Retry Option
+        end
+
+    else Cart Invalid (items unavailable)
+        OrderService-->>Frontend: Cart Validation Failed
+        Frontend->>Customer: Show Out of Stock Message
+    end

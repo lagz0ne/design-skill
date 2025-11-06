@@ -1,0 +1,132 @@
+flowchart LR
+    %% EventStorming Color Conventions
+    classDef event fill:#ff9800,stroke:#e65100,color:#000
+    classDef command fill:#2196f3,stroke:#0d47a1,color:#fff
+    classDef actor fill:#ffeb3b,stroke:#f57f17,color:#000
+    classDef system fill:#9c27b0,stroke:#4a148c,color:#fff
+    classDef aggregate fill:#4caf50,stroke:#1b5e20,color:#fff
+    classDef hotspot fill:#f44336,stroke:#b71c1c,color:#fff
+
+    %% Actors
+    Customer[Customer]:::actor
+    Seller[Artisan/Seller]:::actor
+    Admin[Platform Admin]:::actor
+
+    %% Seller Journey - Product Management
+    CmdListProduct[List Product]:::command
+    EvtProductListed[Product Listed]:::event
+    AggProduct[Product]:::aggregate
+
+    CmdUpdateInventory[Update Inventory]:::command
+    EvtInventoryUpdated[Inventory Updated]:::event
+
+    %% Customer Journey - Discovery & Purchase
+    CmdBrowseProducts[Browse Products]:::command
+    EvtProductViewed[Product Viewed]:::event
+
+    CmdAddToCart[Add to Cart]:::command
+    EvtItemAddedToCart[Item Added to Cart]:::event
+    AggCart[Shopping Cart]:::aggregate
+
+    CmdCheckout[Checkout]:::command
+    EvtOrderPlaced[Order Placed]:::event
+    AggOrder[Order]:::aggregate
+
+    %% Payment Flow
+    EvtPaymentInitiated[Payment Initiated]:::event
+    SysPaymentGateway[Payment Gateway]:::system
+    EvtPaymentProcessed[Payment Processed]:::event
+    EvtFundsEscrowed[Funds Escrowed]:::event
+    AggEscrow[Escrow Account]:::aggregate
+
+    %% Fulfillment Flow
+    EvtSellerNotified[Seller Notified]:::event
+    CmdShipOrder[Ship Order]:::command
+    EvtOrderShipped[Order Shipped]:::event
+    SysShippingCarrier[Shipping Carrier API]:::system
+    EvtTrackingNumberAdded[Tracking Number Added]:::event
+
+    SysEmailService[Email Service]:::system
+
+    %% Delivery & Payment Release
+    EvtOrderDelivered[Order Delivered]:::event
+    CmdConfirmDelivery[Confirm Delivery]:::command
+    EvtDeliveryConfirmed[Delivery Confirmed]:::event
+    EvtFundsReleased[Funds Released to Seller]:::event
+
+    %% Analytics
+    SysAnalytics[Analytics System]:::system
+
+    %% Seller Dashboard
+    CmdViewSales[View Sales Dashboard]:::command
+    EvtSalesDashboardViewed[Sales Data Retrieved]:::event
+
+    %% Hotspots
+    Hot1[? Escrow release timing rules]:::hotspot
+    Hot2[? Dispute resolution process]:::hotspot
+    Hot3[? Return/refund policy]:::hotspot
+    Hot4[? Product categorization]:::hotspot
+    Hot5[? Auto-delivery confirmation]:::hotspot
+
+    %% Flow - Seller lists product
+    Seller --> CmdListProduct
+    CmdListProduct --> EvtProductListed
+    EvtProductListed --> AggProduct
+    EvtProductListed -.question.- Hot4
+
+    Seller --> CmdUpdateInventory
+    CmdUpdateInventory --> EvtInventoryUpdated
+    EvtInventoryUpdated --> AggProduct
+
+    %% Flow - Customer browses and purchases
+    Customer --> CmdBrowseProducts
+    CmdBrowseProducts --> EvtProductViewed
+    EvtProductViewed --> AggProduct
+    EvtProductViewed --> SysAnalytics
+
+    Customer --> CmdAddToCart
+    CmdAddToCart --> EvtItemAddedToCart
+    EvtItemAddedToCart --> AggCart
+
+    Customer --> CmdCheckout
+    CmdCheckout --> EvtOrderPlaced
+    EvtOrderPlaced --> AggOrder
+
+    %% Flow - Payment processing
+    EvtOrderPlaced --> EvtPaymentInitiated
+    EvtPaymentInitiated --> SysPaymentGateway
+    SysPaymentGateway --> EvtPaymentProcessed
+    EvtPaymentProcessed --> EvtFundsEscrowed
+    EvtFundsEscrowed --> AggEscrow
+    EvtFundsEscrowed -.question.- Hot1
+
+    %% Flow - Fulfillment
+    EvtPaymentProcessed --> EvtSellerNotified
+    EvtSellerNotified --> SysEmailService
+
+    Seller --> CmdShipOrder
+    CmdShipOrder --> EvtOrderShipped
+    EvtOrderShipped --> AggOrder
+    EvtOrderShipped --> SysShippingCarrier
+    SysShippingCarrier --> EvtTrackingNumberAdded
+    EvtTrackingNumberAdded --> AggOrder
+    EvtTrackingNumberAdded --> SysEmailService
+
+    %% Flow - Delivery and payment release
+    SysShippingCarrier --> EvtOrderDelivered
+    EvtOrderDelivered -.question.- Hot5
+
+    Customer --> CmdConfirmDelivery
+    CmdConfirmDelivery --> EvtDeliveryConfirmed
+    EvtDeliveryConfirmed --> EvtFundsReleased
+    EvtDeliveryConfirmed -.question.- Hot3
+    EvtFundsReleased --> AggEscrow
+    EvtFundsReleased --> SysPaymentGateway
+
+    EvtDeliveryConfirmed -.question.- Hot2
+
+    %% Flow - Seller dashboard
+    Seller --> CmdViewSales
+    CmdViewSales --> EvtSalesDashboardViewed
+    EvtSalesDashboardViewed --> AggOrder
+    EvtSalesDashboardViewed --> AggProduct

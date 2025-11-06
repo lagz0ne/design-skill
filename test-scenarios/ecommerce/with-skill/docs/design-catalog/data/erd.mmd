@@ -1,0 +1,133 @@
+erDiagram
+    User ||--o{ Product : "seller creates"
+    User ||--o{ Order : "customer places"
+    User ||--|| ShoppingCart : "has"
+    User ||--o{ EscrowAccount : "seller receives from"
+
+    Product ||--o{ CartItem : "appears in"
+    Product ||--o{ OrderItem : "ordered as"
+    Product ||--|| Inventory : "has"
+
+    ShoppingCart ||--o{ CartItem : "contains"
+
+    Order ||--o{ OrderItem : "contains"
+    Order ||--|| Payment : "paid via"
+    Order ||--|| Shipment : "fulfilled as"
+    Order ||--|| EscrowAccount : "held in"
+
+    Payment ||--|| EscrowAccount : "creates"
+
+    Shipment ||--o{ TrackingEvent : "tracked by"
+
+    User {
+        uuid id PK
+        string email "unique"
+        string name
+        string role "CUSTOMER, SELLER, ADMIN"
+        string phone
+        timestamp created_at
+        timestamp last_login
+    }
+
+    Product {
+        uuid id PK
+        uuid seller_id FK "references User"
+        string title
+        text description
+        decimal price
+        string category
+        string[] image_urls
+        string primary_image
+        string status "DRAFT, PUBLISHED, OUT_OF_STOCK, ARCHIVED"
+        timestamp published_at
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    Inventory {
+        uuid id PK
+        uuid product_id FK "references Product, unique"
+        int quantity_available
+        int quantity_reserved
+        timestamp updated_at
+    }
+
+    ShoppingCart {
+        uuid id PK
+        uuid user_id FK "references User, unique"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    CartItem {
+        uuid id PK
+        uuid cart_id FK "references ShoppingCart"
+        uuid product_id FK "references Product"
+        int quantity
+        decimal price_snapshot
+        timestamp added_at
+    }
+
+    Order {
+        uuid id PK
+        uuid customer_id FK "references User"
+        uuid seller_id FK "references User"
+        string order_number "unique"
+        decimal total_amount
+        string status "PENDING, PAID, SHIPPED, DELIVERED, COMPLETED, CANCELLED, DISPUTED"
+        text shipping_address
+        string contact_info
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    OrderItem {
+        uuid id PK
+        uuid order_id FK "references Order"
+        uuid product_id FK "references Product"
+        int quantity
+        decimal price_snapshot
+        string product_title
+    }
+
+    Payment {
+        uuid id PK
+        uuid order_id FK "references Order, unique"
+        decimal amount
+        string payment_method
+        string payment_gateway_id "external reference"
+        string status "PENDING, AUTHORIZED, CAPTURED, FAILED, REFUNDED"
+        timestamp authorized_at
+        timestamp captured_at
+    }
+
+    EscrowAccount {
+        uuid id PK
+        uuid order_id FK "references Order, unique"
+        uuid seller_id FK "references User"
+        decimal amount
+        string status "HELD, RELEASED, REFUNDED"
+        timestamp hold_start_time
+        timestamp release_time
+        string release_reason
+    }
+
+    Shipment {
+        uuid id PK
+        uuid order_id FK "references Order, unique"
+        string tracking_number
+        string carrier_name
+        string status "PREPARING, SHIPPED, IN_TRANSIT, OUT_FOR_DELIVERY, DELIVERED, FAILED"
+        timestamp shipped_at
+        timestamp delivered_at
+    }
+
+    TrackingEvent {
+        uuid id PK
+        uuid shipment_id FK "references Shipment"
+        string event_type "STATUS_UPDATE, LOCATION_UPDATE"
+        string status
+        string location
+        text description
+        timestamp occurred_at
+    }

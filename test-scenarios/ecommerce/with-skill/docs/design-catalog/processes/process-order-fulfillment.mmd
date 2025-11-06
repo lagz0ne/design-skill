@@ -1,0 +1,99 @@
+flowchart LR
+    %% EventStorming Process Level - Order Fulfillment & Delivery
+    classDef event fill:#ff9800,stroke:#e65100,color:#000
+    classDef command fill:#2196f3,stroke:#0d47a1,color:#fff
+    classDef actor fill:#ffeb3b,stroke:#f57f17,color:#000
+    classDef policy fill:#ba68c8,stroke:#6a1b9a,color:#fff
+    classDef aggregate fill:#4caf50,stroke:#1b5e20,color:#fff
+    classDef system fill:#9c27b0,stroke:#4a148c,color:#fff
+    classDef hotspot fill:#f44336,stroke:#b71c1c,color:#fff
+
+    %% Actors & Systems
+    Seller[Artisan/Seller]:::actor
+    Customer[Customer]:::actor
+    SysShipping[Shipping Carrier API]:::system
+    SysEmail[Email Service]:::system
+    SysPayment[Payment Gateway]:::system
+
+    %% Commands
+    CmdShipOrder[Mark as Shipped]:::command
+    CmdConfirmDelivery[Confirm Delivery]:::command
+    CmdDisputeOrder[Raise Dispute]:::command
+
+    %% Events
+    EvtOrderReceived[Order Received by Seller]:::event
+    EvtOrderPrepared[Order Prepared]:::event
+    EvtOrderShipped[Order Shipped]:::event
+    EvtTrackingAdded[Tracking Number Added]:::event
+    EvtCustomerNotified[Customer Notified]:::event
+    EvtInTransit[Package In Transit]:::event
+    EvtDeliveryAttempted[Delivery Attempted]:::event
+    EvtOrderDelivered[Order Delivered]:::event
+    EvtDeliveryConfirmed[Delivery Confirmed]:::event
+    EvtFundsReleased[Funds Released to Seller]:::event
+    EvtDisputeRaised[Dispute Raised]:::event
+
+    %% Aggregates
+    AggOrder[Order]:::aggregate
+    AggEscrow[Escrow Account]:::aggregate
+
+    %% Policies
+    PolicyAutoConfirm{Auto-confirm<br/>after N days?}:::policy
+    PolicyDeliveryProof{Delivery<br/>Confirmed?}:::policy
+
+    %% Hotspots
+    Hot1[? Auto-confirm duration]:::hotspot
+    Hot2[? Dispute resolution workflow]:::hotspot
+    Hot3[? Partial delivery handling]:::hotspot
+
+    %% Flow - Seller prepares and ships
+    EvtOrderReceived --> EvtOrderPrepared
+    EvtOrderPrepared -.data.- Note1[status=PREPARING]
+
+    Seller --> CmdShipOrder
+    CmdShipOrder --> EvtOrderShipped
+    EvtOrderShipped --> AggOrder
+    EvtOrderShipped -.data.- Note2[status=SHIPPED,<br/>shipped_at timestamp]
+
+    EvtOrderShipped --> SysShipping
+    SysShipping --> EvtTrackingAdded
+    EvtTrackingAdded --> AggOrder
+    EvtTrackingAdded -.data.- Note3[tracking_number,<br/>carrier_name]
+
+    EvtTrackingAdded --> EvtCustomerNotified
+    EvtCustomerNotified --> SysEmail
+
+    %% Flow - Delivery tracking
+    SysShipping --> EvtInTransit
+    EvtInTransit --> AggOrder
+
+    SysShipping --> EvtDeliveryAttempted
+    EvtDeliveryAttempted --> AggOrder
+
+    SysShipping --> EvtOrderDelivered
+    EvtOrderDelivered --> AggOrder
+    EvtOrderDelivered -.data.- Note4[status=DELIVERED,<br/>delivered_at timestamp]
+
+    %% Flow - Confirmation and payment release
+    EvtOrderDelivered --> PolicyAutoConfirm
+    PolicyAutoConfirm -->|auto after X days| EvtDeliveryConfirmed
+    PolicyAutoConfirm -.question.- Hot1
+
+    Customer --> CmdConfirmDelivery
+    CmdConfirmDelivery --> PolicyDeliveryProof
+    PolicyDeliveryProof -->|confirmed| EvtDeliveryConfirmed
+
+    EvtDeliveryConfirmed --> AggOrder
+    EvtDeliveryConfirmed -.data.- Note5[status=COMPLETED,<br/>confirmed_at]
+
+    EvtDeliveryConfirmed --> EvtFundsReleased
+    EvtFundsReleased --> AggEscrow
+    EvtFundsReleased --> SysPayment
+    EvtFundsReleased -.data.- Note6[escrow released,<br/>payout to seller]
+
+    %% Flow - Dispute handling
+    Customer --> CmdDisputeOrder
+    CmdDisputeOrder --> EvtDisputeRaised
+    EvtDisputeRaised --> AggOrder
+    EvtDisputeRaised -.question.- Hot2
+    EvtDisputeRaised -.question.- Hot3

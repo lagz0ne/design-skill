@@ -1,0 +1,61 @@
+sequenceDiagram
+    actor Seller
+    participant SellerDashboard
+    participant OrderService
+    participant ShippingService
+    participant ShippingCarrier
+    participant EmailService
+    participant EscrowService
+    participant PaymentGateway
+    actor Customer
+
+    Seller->>SellerDashboard: View Pending Orders
+    SellerDashboard->>OrderService: Get Orders (status=PAID)
+    OrderService-->>SellerDashboard: Return Order List
+
+    Seller->>SellerDashboard: Mark Order as Shipped
+    SellerDashboard->>Seller: Request Tracking Number
+    Seller->>SellerDashboard: Provide Tracking Info
+
+    SellerDashboard->>OrderService: Update Order (SHIPPED)
+    OrderService->>ShippingService: Add Tracking Number
+    ShippingService->>ShippingCarrier: Register Tracking
+    ShippingCarrier-->>ShippingService: Tracking Registered
+
+    ShippingService-->>OrderService: Tracking Added
+    OrderService->>EmailService: Send Customer Notification
+    EmailService->>Customer: Email: Order Shipped + Tracking
+
+    Note over ShippingService,ShippingCarrier: Carrier processes delivery
+
+    loop Tracking Updates
+        ShippingCarrier->>ShippingService: Status Update (IN_TRANSIT, etc)
+        ShippingService->>OrderService: Update Shipment Status
+    end
+
+    ShippingCarrier->>ShippingService: Status: DELIVERED
+    ShippingService->>OrderService: Mark Delivered
+    OrderService->>OrderService: Start Auto-Confirm Timer
+
+    alt Manual Confirmation
+        Customer->>OrderService: Confirm Delivery
+        OrderService->>OrderService: Set status=COMPLETED
+
+    else Auto-Confirmation After X Days
+        Note over OrderService: Timer expires (e.g., 7 days)
+        OrderService->>OrderService: Auto-set status=COMPLETED
+    end
+
+    OrderService->>EscrowService: Release Funds
+    EscrowService->>PaymentGateway: Transfer to Seller Account
+    PaymentGateway-->>EscrowService: Transfer Complete
+
+    EscrowService-->>OrderService: Funds Released
+
+    par Final Notifications
+        OrderService->>EmailService: Notify Seller (Payment Released)
+        EmailService->>Seller: Email: Payment Received
+    and
+        OrderService->>EmailService: Notify Customer (Order Complete)
+        EmailService->>Customer: Email: Order Completed
+    end

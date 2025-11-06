@@ -1,0 +1,84 @@
+flowchart LR
+    %% EventStorming Process Level - Checkout & Payment with Escrow
+    classDef event fill:#ff9800,stroke:#e65100,color:#000
+    classDef command fill:#2196f3,stroke:#0d47a1,color:#fff
+    classDef actor fill:#ffeb3b,stroke:#f57f17,color:#000
+    classDef policy fill:#ba68c8,stroke:#6a1b9a,color:#fff
+    classDef aggregate fill:#4caf50,stroke:#1b5e20,color:#fff
+    classDef system fill:#9c27b0,stroke:#4a148c,color:#fff
+    classDef hotspot fill:#f44336,stroke:#b71c1c,color:#fff
+
+    %% Actors & Systems
+    Customer[Customer]:::actor
+    SysPayment[Payment Gateway]:::system
+    SysEmail[Email Service]:::system
+
+    %% Commands
+    CmdCheckout[Initiate Checkout]:::command
+    CmdSubmitPayment[Submit Payment Info]:::command
+
+    %% Events
+    EvtCheckoutStarted[Checkout Started]:::event
+    EvtCartValidated[Cart Validated]:::event
+    EvtShippingInfoProvided[Shipping Info Provided]:::event
+    EvtPaymentInfoProvided[Payment Info Provided]:::event
+    EvtOrderCreated[Order Created]:::event
+    EvtPaymentAuthorized[Payment Authorized]:::event
+    EvtFundsEscrowed[Funds Moved to Escrow]:::event
+    EvtSellerNotified[Seller Notified]:::event
+    EvtCustomerNotified[Customer Notified]:::event
+
+    %% Aggregates
+    AggCart[Shopping Cart]:::aggregate
+    AggOrder[Order]:::aggregate
+    AggEscrow[Escrow Account]:::aggregate
+
+    %% Policies
+    PolicyCartValid{Cart Items<br/>Available?}:::policy
+    PolicyPaymentValid{Payment<br/>Authorized?}:::policy
+
+    %% Error Events
+    EvtCheckoutFailed[Checkout Failed]:::event
+    EvtPaymentFailed[Payment Failed]:::event
+
+    %% Hotspots
+    Hot1[? Partial inventory scenarios]:::hotspot
+    Hot2[? Payment retry logic]:::hotspot
+    Hot3[? Escrow hold duration]:::hotspot
+
+    %% Flow
+    Customer --> CmdCheckout
+    CmdCheckout --> EvtCheckoutStarted
+    EvtCheckoutStarted --> AggCart
+
+    EvtCheckoutStarted --> PolicyCartValid
+    PolicyCartValid -->|inventory available| EvtCartValidated
+    PolicyCartValid -->|items unavailable| EvtCheckoutFailed
+    EvtCartValidated -.question.- Hot1
+
+    EvtCartValidated --> EvtShippingInfoProvided
+    EvtShippingInfoProvided -.data.- Note1[shipping_address,<br/>contact_info set]
+
+    Customer --> CmdSubmitPayment
+    CmdSubmitPayment --> EvtPaymentInfoProvided
+    EvtPaymentInfoProvided --> SysPayment
+
+    SysPayment --> PolicyPaymentValid
+    PolicyPaymentValid -->|authorized| EvtPaymentAuthorized
+    PolicyPaymentValid -->|declined| EvtPaymentFailed
+    EvtPaymentFailed -.question.- Hot2
+
+    EvtPaymentAuthorized --> EvtOrderCreated
+    EvtOrderCreated --> AggOrder
+    EvtOrderCreated -.data.- Note2[order_id,<br/>total_amount,<br/>status=PENDING]
+
+    EvtOrderCreated --> EvtFundsEscrowed
+    EvtFundsEscrowed --> AggEscrow
+    EvtFundsEscrowed -.data.- Note3[escrow_amount,<br/>hold_start_time,<br/>seller_id]
+    EvtFundsEscrowed -.question.- Hot3
+
+    EvtFundsEscrowed --> EvtSellerNotified
+    EvtSellerNotified --> SysEmail
+
+    EvtFundsEscrowed --> EvtCustomerNotified
+    EvtCustomerNotified --> SysEmail
