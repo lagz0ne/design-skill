@@ -323,17 +323,20 @@ flowchart LR
 1. Generate catalog README with:
    - Project overview
    - Links to all artifacts
-   - Embedded key diagrams (big-picture, ERD)
+   - **EMBED ALL DIAGRAMS** (copy full Mermaid content from each .mmd file)
    - Navigation to processes, states, flows
+   - All diagrams must be visible in README for easy preview
 2. Present complete design catalog
 3. Ask: "Ready to proceed with implementation planning?"
+
+**CRITICAL:** The README must include the FULL Mermaid diagram content inline, not just links. Copy the entire contents of each .mmd file into the README's mermaid code blocks. This enables preview without opening individual files.
 
 **Options:**
 - **Standalone design:** Stop here, design complete
 - **Implementation planning:** Use writing-plans skill
 - **Pumped-design mapping:** (If backend + pumped-fn) Map to pumped-fn catalog
 
-**Output:** `docs/design-catalog/README.md`
+**Output:** `docs/design-catalog/README.md` (with all diagrams embedded)
 
 ## Iterative Refinement
 
@@ -381,8 +384,9 @@ If you catch yourself doing ANY of these, you're violating the skill:
 - Writing SQL schemas
 - Creating deployment guides
 - Making technology choices without user input
-- Using > 20,000 tokens for design
+- Using > 35,000 tokens for complex design (see Law 6 targets)
 - Not using TodoWrite for phases
+- Creating README with only links to diagrams (must embed full content)
 
 **All of these mean: Stop, re-read the skill, start over correctly.**
 
