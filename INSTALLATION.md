@@ -18,7 +18,7 @@
 
 The skill should now be available at:
 ```
-~/.claude/plugins/marketplaces/design-skill-marketplace/.claude/skills/system-design/
+~/.claude/plugins/cache/system-design/skills/system-design/
 ```
 
 ### Using the Skill
@@ -88,8 +88,8 @@ To remove the marketplace:
 ## Troubleshooting
 
 **Skill not activating?**
-- Check installation: `ls ~/.claude/plugins/marketplaces/design-skill-marketplace/`
-- Verify skill exists: `cat ~/.claude/plugins/marketplaces/design-skill-marketplace/.claude/skills/system-design/SKILL.md`
+- Check installation: `ls ~/.claude/plugins/cache/system-design/`
+- Verify skill exists: `cat ~/.claude/plugins/cache/system-design/skills/system-design/SKILL.md`
 
 **Can't find marketplace?**
 - Ensure you used the correct command: `/plugin marketplace add lagz0ne/design-skill`

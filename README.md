@@ -79,25 +79,28 @@ The skill transforms a simple request into a complete design catalog:
 
 See `test-scenarios/ecommerce/with-skill/` for full example.
 
-## Marketplace Structure
+## Plugin Structure
 
 ```
-design-skill-marketplace/
-├── .claude/
-│   └── skills/
-│       └── system-design/      # The skill
+design-skill/
+├── skills/
+│   └── system-design/          # The skill
+│       ├── SKILL.md            # Main skill (470 lines)
+│       └── templates/          # 7 Mermaid templates
 ├── .claude-plugin/
-│   └── marketplace.json        # Plugin catalog
+│   ├── plugin.json             # Plugin metadata
+│   └── marketplace.json        # Marketplace catalog
 ├── docs/
 │   └── plans/                  # Design documentation
 ├── test-scenarios/             # TDD test cases
+├── LICENSE                     # MIT
 └── README.md                   # This file
 ```
 
 ## Support
 
 - **Issues:** https://github.com/lagz0ne/design-skill/issues
-- **Skill Documentation:** `.claude/skills/system-design/SKILL.md`
+- **Skill Documentation:** `skills/system-design/SKILL.md`
 
 ## License
 

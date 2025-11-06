@@ -1,0 +1,13 @@
+{
+  "name": "system-design",
+  "description": "Transform requirements into navigable design catalogs using EventStorming methodology, Mermaid diagrams, and progressive elaboration",
+  "version": "1.0.0",
+  "author": {
+    "name": "lagz0ne",
+    "email": "lagz0ne@users.noreply.github.com"
+  },
+  "homepage": "https://github.com/lagz0ne/design-skill",
+  "repository": "https://github.com/lagz0ne/design-skill",
+  "license": "MIT",
+  "keywords": ["design", "architecture", "eventstorming", "mermaid", "system-design", "diagrams", "catalog"]
+}
