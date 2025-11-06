@@ -1,0 +1,23 @@
+{
+  "name": "design-skill-marketplace",
+  "owner": {
+    "name": "lagz0ne",
+    "email": "lagz0ne@users.noreply.github.com"
+  },
+  "metadata": {
+    "description": "System design skill for Claude Code using EventStorming and Mermaid diagrams",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "system-design",
+      "source": {
+        "source": "url",
+        "url": "https://github.com/lagz0ne/design-skill.git"
+      },
+      "description": "Transform requirements into navigable design catalogs using EventStorming methodology, Mermaid diagrams, and progressive elaboration through 5 phases",
+      "version": "1.0.0",
+      "strict": true
+    }
+  ]
+}

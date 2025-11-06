@@ -1,51 +1,57 @@
-# System Design Skill
+# Design Skill Marketplace
 
-A skill for Claude Code that transforms requirements into navigable design catalogs using EventStorming methodology and Mermaid diagrams.
+Claude Code marketplace for system design using EventStorming and Mermaid diagrams.
 
-## Overview
+## Installation
 
-This skill guides Claude through structured system design using:
-- **EventStorming** methodology for event-driven thinking
-- **Mermaid diagrams** for visual, version-controllable artifacts
-- **5-phase progressive elaboration** (Requirements → Big Picture → Processes → Data/Flows → Integration)
-- **Catalog structure** for navigable design documentation
+Add this marketplace to Claude Code:
 
-## Quick Start
+```bash
+/plugin marketplace add lagz0ne/design-skill
+```
 
-**Location:** `skills/system-design/SKILL.md`
+Then install the system-design plugin:
 
-**Use when:**
-- Designing a new system from requirements
-- Need structured architecture thinking
-- Want visual design artifacts
-- Team collaboration on design
+```bash
+/plugin install system-design@design-skill-marketplace
+```
+
+## Available Plugins
+
+### System Design
+
+**Description:** Transform requirements into navigable design catalogs using EventStorming methodology, Mermaid diagrams, and progressive elaboration
+
+**Categories:** Architecture, Design, EventStorming, Documentation
+
+**What you get:**
+- EventStorming-based design process
+- 5-phase progressive elaboration (Requirements → Big Picture → Processes → Data/Flows → Integration)
+- Mermaid diagram templates (EventStorming, ERD, State Charts, Sequence Diagrams)
+- Standardized catalog structure (`docs/design-catalog/`)
+- Token-efficient visual artifacts
+
+**Repository:** https://github.com/lagz0ne/design-skill
 
 **Triggers:** "design a system", "architect a solution", "plan a backend"
 
-## Key Features
+---
 
-### 6 Iron Laws
+## How It Works
 
-1. **ASK QUESTIONS** - No assumptions without clarification
-2. **MERMAID ONLY** - No ASCII diagrams
-3. **EVENTSTORMING** - Event-driven thinking required
-4. **CATALOG STRUCTURE** - Standardized organization
-5. **DESIGN NOT IMPLEMENTATION** - No code, SQL, or deployment details
-6. **TOKEN EFFICIENCY** - Diagrams over prose
+The system-design skill guides you through 5 phases:
 
-### Progressive Phases
-
-1. **Requirements** - Ask questions, identify actors/constraints
-2. **Big Picture** - EventStorming timeline with events/commands/actors
-3. **Processes** - Detail 2-4 critical processes
-4. **Data & Flows** - ERD + state charts + sequence diagrams
-5. **Integration** - Assemble catalog, plan next steps
+1. **Requirements** - Interactive questions to understand context (no assumptions)
+2. **Big Picture** - EventStorming timeline with color-coded events/commands/actors
+3. **Processes** - Detail 2-4 critical workflows with aggregates and policies
+4. **Data & Flows** - ERD, state charts for complex entities, sequence diagrams for critical flows
+5. **Integration** - Assemble navigable catalog with all diagrams embedded
 
 ### Output Structure
 
 ```
 docs/design-catalog/
-  README.md              # Navigation hub
+  README.md              # Navigation hub with all diagrams embedded
   requirements.md
   big-picture.mmd
   processes/
@@ -57,89 +63,54 @@ docs/design-catalog/
     sequence-{flow}.mmd
 ```
 
-## Development
+All diagrams use Mermaid format and follow EventStorming color conventions.
 
-### TDD Methodology
+## Example: E-commerce Platform
 
-This skill was created following **Test-Driven Development for documentation**:
+The skill transforms a simple request into a complete design catalog:
 
-1. **RED Phase:** Created baseline test without skill (documented failures)
-2. **GREEN Phase:** Wrote skill to address failures, verified compliance
-3. **REFACTOR Phase:** Identified loopholes, added explicit counters
+**Input:** "I want to build an e-commerce platform where artisans can sell handmade products"
 
-### Test Scenarios
+**Output:**
+- 10 Mermaid diagrams (big picture, 3 processes, ERD, 2 states, 3 sequences)
+- 14 hotspots identified for decisions
+- Complete navigable catalog
+- ~45K tokens (vs 49K baseline without skill)
 
-Located in `test-scenarios/`:
+See `test-scenarios/ecommerce/with-skill/` for full example.
 
-- **E-commerce:** Medium complexity, multi-actor system
-- **SaaS Auth:** High complexity, security-critical, multi-tenancy
-- **IoT Platform:** High scale, real-time processing
+## Marketplace Structure
 
-### Baseline vs With Skill
+```
+design-skill-marketplace/
+├── .claude/
+│   └── skills/
+│       └── system-design/      # The skill
+├── .claude-plugin/
+│   └── marketplace.json        # Plugin catalog
+├── docs/
+│   └── plans/                  # Design documentation
+├── test-scenarios/             # TDD test cases
+└── README.md                   # This file
+```
 
-| Metric | Baseline | With Skill |
-|--------|----------|------------|
-| Questions Asked | 0 | 6 |
-| Mermaid Diagrams | 0 (ASCII) | 10 |
-| EventStorming | No | Yes |
-| Catalog Structure | Random | Perfect |
-| Hotspots Marked | 0 | 14 |
+## Support
 
-## Documentation
-
-- **Design Document:** `docs/plans/2025-11-06-system-design-skill-design.md`
-- **Skill File:** `skills/system-design/SKILL.md`
-- **Templates:** `skills/system-design/templates/`
-- **Test Results:** `test-scenarios/ecommerce/`
-
-## Templates Provided
-
-- `big-picture-template.mmd` - EventStorming timeline
-- `process-template.mmd` - Process EventStorming
-- `erd-template.mmd` - Entity-Relationship
-- `state-template.mmd` - State chart
-- `sequence-template.mmd` - Sequence diagram
-- `requirements-template.md` - Requirements structure
-- `catalog-readme-template.md` - Catalog README
-
-## Integration
-
-Works with:
-- **brainstorming** skill - Phase 1 question patterns
-- **writing-plans** skill - Optional handoff after design
-- **pumped-design** skill - Map to pumped-fn catalog structure
-
-## Token Efficiency
-
-**Targets by complexity:**
-- Simple (5-10 entities): < 10K tokens
-- Medium (10-20 entities): < 20K tokens
-- Complex (20+ entities): < 35K tokens
-
-**Baseline comparison:** 49K tokens → 45K with skill (8% reduction + better quality)
-
-## Success Criteria
-
-- [x] Asks 3+ clarifying questions
-- [x] Uses AskUserQuestion tool
-- [x] 100% Mermaid diagrams (no ASCII)
-- [x] Follows EventStorming color conventions
-- [x] Creates catalog structure correctly
-- [x] Marks hotspots instead of assumptions
-- [x] Stays conceptual (no SQL, deployment)
-- [x] Uses TodoWrite for phase tracking
+- **Issues:** https://github.com/lagz0ne/design-skill/issues
+- **Skill Documentation:** `.claude/skills/system-design/SKILL.md`
 
 ## License
 
-Part of the design-skill project.
+MIT License
 
-## Contributing
+---
 
-Follow TDD methodology:
-1. Create failing test scenario
-2. Write/update skill to pass
-3. Refactor to close loopholes
+## For Developers
 
-## Author
+This skill was built using **TDD for documentation**:
 
-Created: 2025-11-06
+1. **RED:** Baseline test (49K tokens, 0 questions, ASCII diagrams)
+2. **GREEN:** Skill created (45K tokens, 6 questions, Mermaid)
+3. **REFACTOR:** Closed loopholes (explicit limits, counters)
+
+See `test-scenarios/` and `docs/plans/` for full development process.
